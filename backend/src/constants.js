@@ -9,4 +9,11 @@ export const userRole = {
 
 export const availableUserRole = Object.values(userRole);
 
+export const userSubscription = {
+  FREE: "FREE",
+  PREMIUM: "PREMIUM",
+};
+
+export const availableSubscription = Object.values(userSubscription);
+
 export const USER_TEMPORARY_TOKEN_EXPIRY = 10 * 60 * 1000;
