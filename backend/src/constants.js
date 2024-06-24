@@ -1,9 +1,14 @@
 export const DB_NAME = "Neuzy";
 
+export const options = {
+  httpOnly: true,
+  secret: true,
+};
+
 export const userRole = {
   USER: "USER",
   SUBSCRIBER: "SUBSCRIBER",
-  AUTHOR: AUTHOR,
+  AUTHOR: "AUTHOR",
   ADMIN: "ADMIN",
 };
 
@@ -14,6 +19,13 @@ export const userSubscription = {
   PREMIUM: "PREMIUM",
 };
 
-export const availableSubscription = Object.values(userSubscription);
+export const availableUserSubscription = Object.values(userSubscription);
+
+export const paymentMethod = {
+  UNKNOWN: "UNKNOWN",
+  RAZORPAY: "RAZORPAY",
+};
+
+export const availablePaymentMethod = Object.values(paymentMethod);
 
 export const USER_TEMPORARY_TOKEN_EXPIRY = 10 * 60 * 1000;
