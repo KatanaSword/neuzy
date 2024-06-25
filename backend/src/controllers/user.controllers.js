@@ -125,4 +125,29 @@ const logInUser = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, logInUser };
+const logOutUser = asyncHandler(async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $unset: {
+          refreshToken: 1,
+        },
+      },
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .clearCookie("refreshToken", options)
+      .clearCookie("accessToken", options)
+      .json(new ApiResponse(200, {}, "Logout successful. Have a great day!"));
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Log out failed due to an unexpected server error, Please try again later"
+    );
+  }
+});
+
+export { registerUser, logInUser, logOutUser };
