@@ -150,4 +150,23 @@ const logOutUser = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, logInUser, logOutUser };
+const getCurrentUser = asyncHandler(async (req, res) => {
+  try {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          req.user,
+          "Current user details retrieved successfully"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Failed to retrieved current user due to an unexpected server error. Please try again later"
+    );
+  }
+});
+
+export { registerUser, logInUser, logOutUser, getCurrentUser };
