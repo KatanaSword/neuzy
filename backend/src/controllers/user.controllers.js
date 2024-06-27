@@ -210,10 +210,41 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     );
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!(currentPassword || newPassword)) {
+    throw new ApiError(
+      400,
+      "Missing or incomplete information. Please fill out all required fields to change password"
+    );
+  }
+
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(currentPassword);
+  if (!isPasswordValid) {
+    throw new ApiError(
+      400,
+      "Invalid password. Please enter the correct password and try again"
+    );
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password change successfully"));
+});
+
 export {
   registerUser,
   logInUser,
   logOutUser,
   getCurrentUser,
   refreshAccessToken,
+  changePassword,
 };
