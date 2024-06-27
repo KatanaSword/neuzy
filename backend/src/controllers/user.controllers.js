@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.models.js";
 import { userRole, userSubscription } from "../constants.js";
 import { options } from "../constants.js";
+import jwt from "jsonwebtoken";
 
 const generateRefreshAndAccessToken = async (userId) => {
   try {
@@ -169,4 +170,50 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, logInUser, logOutUser, getCurrentUser };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.refreshToken || req.body?.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Missing or invalid refresh token");
+  }
+
+  const decodedToken = jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+
+  const user = await User.findById(decodedToken?._id);
+  if (!user) {
+    throw new ApiError(401, "Missing or invalid refresh token");
+  }
+
+  if (incomingRefreshToken !== user?.refreshToken) {
+    throw new ApiError(
+      401,
+      "Refresh token mismatch. Please reauthenticate to obtain a new access token"
+    );
+  }
+
+  const { accessToken, refreshToken: newRefreshToken } =
+    await generateRefreshAndAccessToken(user?._id);
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", newRefreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { accessToken, refreshToken: newRefreshToken },
+        "Tokens refreshed successfully."
+      )
+    );
+});
+
+export {
+  registerUser,
+  logInUser,
+  logOutUser,
+  getCurrentUser,
+  refreshAccessToken,
+};
