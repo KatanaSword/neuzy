@@ -5,6 +5,10 @@ import { User } from "../models/user.models.js";
 import { userRole, userSubscription } from "../constants.js";
 import { options } from "../constants.js";
 import jwt from "jsonwebtoken";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 const generateRefreshAndAccessToken = async (userId) => {
   try {
@@ -240,6 +244,47 @@ const changePassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password change successfully"));
 });
 
+const accountDetailUpdate = asyncHandler(async (req, res) => {
+  const { firstName, lastName, username, email } = req.body;
+
+  const uniqueUsernameAndEmail = await User.findOne({
+    $or: [
+      { username: username?.trim().toLowerCase() },
+      { email: email?.trim().toLowerCase() },
+    ],
+  });
+
+  if (uniqueUsernameAndEmail) {
+    throw new ApiError(
+      409,
+      "The username or email already exists. Please use a different username and email to account update"
+    );
+  }
+
+  const updateAccount = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        firstName,
+        lastName,
+        username: username?.toLowerCase(),
+        email,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+  if (!updateAccount) {
+    throw new ApiError(
+      500,
+      "Failed to create product due to an unexpected server error. Please try again later"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updateAccount, "Account update successfully"));
+});
+
 export {
   registerUser,
   logInUser,
@@ -247,4 +292,5 @@ export {
   getCurrentUser,
   refreshAccessToken,
   changePassword,
+  accountDetailUpdate,
 };
