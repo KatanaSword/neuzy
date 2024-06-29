@@ -285,6 +285,43 @@ const accountDetailUpdate = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updateAccount, "Account update successfully"));
 });
 
+const uploadAvatar = asyncHandler(async (req, res) => {
+  const localFilePath = req.file?.path;
+  if (!localFilePath) {
+    throw new ApiError(400, "Avatar is missing");
+  }
+
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  const avatar = await uploadOnCloudinary(localFilePath, "neuzy/users");
+  if (!avatar) {
+    throw new ApiError(
+      400,
+      "Failed to upload avatar. Please ensure the file format is supported"
+    );
+  }
+
+  const uploadAvatar = await User.findByIdAndUpdate(
+    user._id,
+    {
+      $set: {
+        avatar: { url: avatar.url, publicId: avatar.public_id },
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  const publicId = user.avatar.publicId;
+  await deleteFromCloudinary(publicId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, uploadAvatar, "Avatar upload successfully"));
+});
+
 export {
   registerUser,
   logInUser,
@@ -293,4 +330,5 @@ export {
   refreshAccessToken,
   changePassword,
   accountDetailUpdate,
+  uploadAvatar,
 };
