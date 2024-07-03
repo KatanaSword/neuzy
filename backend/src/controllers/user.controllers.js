@@ -403,6 +403,80 @@ const resetPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Reset password successfully"));
 });
 
+const verifyUserEmailId = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw new ApiError(
+      400,
+      "Missing or incomplete information. Please fill out required field to verify email"
+    );
+  }
+
+  const user = await User.findOne({
+    $or: [{ email: email.trim().toLowerCase() }],
+  });
+  if (!user) {
+    throw new ApiError(404, "User does not exist", []);
+  }
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+
+  sendEmail({
+    email: user?.email,
+    subject: "Verify email id",
+    mailgenContent: verifyEmailMailgenContent(
+      user.username,
+      `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+    ),
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "Email sent on your email Id. Please check your inbox for further instructions"
+      )
+    );
+});
+
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { verificationToken } = req.params;
+  if (!verificationToken) {
+    throw new ApiError(400, "Email verification token is missing");
+  }
+
+  let hashedToken = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpiry: { $gt: Date.now() },
+  });
+  if (!user) {
+    throw new ApiError(400, "Token is missing or expire");
+  }
+
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  user.isEmailVerified = true;
+  await save.user({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
+});
+
 export {
   registerUser,
   logInUser,
@@ -414,4 +488,6 @@ export {
   uploadAvatar,
   forgotPassword,
   resetPassword,
+  verifyUserEmailId,
+  verifyEmail,
 };
