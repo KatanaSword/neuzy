@@ -259,7 +259,6 @@ const accountDetailUpdate = asyncHandler(async (req, res) => {
       { email: email?.trim().toLowerCase() },
     ],
   });
-
   if (uniqueUsernameAndEmail) {
     throw new ApiError(
       409,
@@ -267,8 +266,13 @@ const accountDetailUpdate = asyncHandler(async (req, res) => {
     );
   }
 
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
   const updateAccount = await User.findByIdAndUpdate(
-    req.user._id,
+    user._id,
     {
       $set: {
         firstName,
@@ -284,6 +288,11 @@ const accountDetailUpdate = asyncHandler(async (req, res) => {
       500,
       "Failed to create product due to an unexpected server error. Please try again later"
     );
+  }
+
+  if (email) {
+    user.isEmailVerified = false;
+    await user.save({ validateBeforeSave: false });
   }
 
   return res
@@ -427,7 +436,7 @@ const verifyUserEmailId = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  sendEmail({
+  await sendEmail({
     email: user?.email,
     subject: "Verify email id",
     mailgenContent: verifyEmailMailgenContent(
@@ -463,7 +472,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
     emailVerificationExpiry: { $gt: Date.now() },
   });
   if (!user) {
-    throw new ApiError(400, "Token is missing or expire");
+    throw new ApiError(489, "Token is missing or expire");
   }
 
   user.emailVerificationToken = undefined;
@@ -475,6 +484,44 @@ const verifyEmail = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
+});
+
+const resendVerifyEmailRequest = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User does not exists", []);
+  }
+
+  if (user.isEmailVerified) {
+    throw new ApiError(409, "Email is already verified!");
+  }
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+
+  await sendEmail({
+    email: user.email,
+    subject: "Verify email id",
+    mailgenContent: verifyEmailMailgenContent(
+      user.username,
+      `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+    ),
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "Email sent on your email Id. Please check your inbox for further instructions"
+      )
+    );
 });
 
 export {
@@ -490,4 +537,5 @@ export {
   resetPassword,
   verifyUserEmailId,
   verifyEmail,
+  resendVerifyEmailRequest,
 };
