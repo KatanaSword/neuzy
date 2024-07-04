@@ -32,4 +32,17 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
   }
 });
 
-export { verifyJWT };
+const verifyPermission = (role = []) => {
+  asyncHandler(async (req, res, next) => {
+    if (!req.user?._id) {
+      throw new ApiError(401, "Unauthorized request");
+    }
+    if (role.includes(req.user?.role)) {
+      next();
+    } else {
+      throw new ApiError(403, "You are not allowed to perform this action");
+    }
+  });
+};
+
+export { verifyJWT, verifyPermission };
