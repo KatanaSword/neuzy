@@ -524,6 +524,36 @@ const resendVerifyEmailRequest = asyncHandler(async (req, res) => {
     );
 });
 
+const assingRole = asyncHandler(async (req, res) => {
+  const { role } = req.body;
+  const { userId } = req.params;
+  if (!role) {
+    throw new ApiError(
+      400,
+      "Missing or incomplete information. Please fill out required field to assing role"
+    );
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User does not exists");
+    }
+
+    user.role = role;
+    await user.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Role change successfully"));
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Assign role failed due to an unexpected server error. Please try again later."
+    );
+  }
+});
+
 export {
   registerUser,
   logInUser,
@@ -538,4 +568,5 @@ export {
   verifyUserEmailId,
   verifyEmail,
   resendVerifyEmailRequest,
+  assingRole,
 };
