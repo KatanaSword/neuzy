@@ -14,7 +14,7 @@ import {
   forgotPasswordMailgenContent,
   verifyEmailMailgenContent,
 } from "../utils/mail.js";
-import crypto, { createHash } from "crypto";
+import crypto from "crypto";
 
 const generateRefreshAndAccessToken = async (userId) => {
   try {
@@ -47,7 +47,12 @@ const registerUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const userExist = await User.findOne({ $or: [{ username }, { email }] });
+  const userExist = await User.findOne({
+    $or: [
+      { username: username.trim().toLowerCase() },
+      { email: email.trim().toLowerCase() },
+    ],
+  });
   if (userExist) {
     throw new ApiError(
       409,
@@ -89,14 +94,19 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const logInUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
-  if (!email && !username) {
+  if (!email.trim() && !username.trim()) {
     throw new ApiError(
       400,
       "Missing or incomplete information. Please fill out all required fields to log in."
     );
   }
 
-  const user = await User.findOne({ $or: [{ email }, { username }] });
+  const user = await User.findOne({
+    $or: [
+      { email: email.trim().toLowerCase() },
+      { username: username.trim().toLowerCase() },
+    ],
+  });
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
@@ -339,7 +349,7 @@ const uploadAvatar = asyncHandler(async (req, res) => {
 
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  if (!email) {
+  if (!email.trim()) {
     throw new ApiError(
       400,
       "Missing or incomplete information. Please fill out required field to forgot password"
@@ -414,7 +424,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const verifyUserEmailId = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  if (!email) {
+  if (!email.trim()) {
     throw new ApiError(
       400,
       "Missing or incomplete information. Please fill out required field to verify email"
@@ -524,13 +534,13 @@ const resendVerifyEmailRequest = asyncHandler(async (req, res) => {
     );
 });
 
-const assingRole = asyncHandler(async (req, res) => {
+const assignRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
   const { userId } = req.params;
-  if (!role) {
+  if (!role.trim()) {
     throw new ApiError(
       400,
-      "Missing or incomplete information. Please fill out required field to assing role"
+      "Missing or incomplete information. Please fill out required field to assign role"
     );
   }
 
@@ -568,5 +578,5 @@ export {
   verifyUserEmailId,
   verifyEmail,
   resendVerifyEmailRequest,
-  assingRole,
+  assignRole,
 };
