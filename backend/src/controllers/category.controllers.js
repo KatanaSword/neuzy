@@ -2,15 +2,37 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Category } from "../models/category.models.js";
+import { getMongoosePaginationOptions } from "../utils/helpers.js";
 
-const getAllCategory = asyncHandler(async (req, res) => {
+const getAllCategories = asyncHandler(async (req, res) => {
   // get all category
   // handle error
   // use helper function
   // send response
+  const { page = 1, limit = 10 } = req.query;
+  const categoryAggregate = await Category.aggregate([{ $match: {} }]);
+
+  if (categoryAggregate.length < 1) {
+    throw new ApiError(404, "Category does not exists");
+  }
+
+  const categories = await Category.aggregatePaginate(
+    categoryAggregate,
+    getMongoosePaginationOptions({
+      page,
+      limit,
+      customLabels: { totalDocs: "totalCategories", docs: "categories" },
+    })
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, categories, "Categories retrieved successfully")
+    );
 });
 
-const createCategory = asyncHandler(async (req, res) => {
+const createCategories = asyncHandler(async (req, res) => {
   const { name } = req.body;
   if (!name) {
     throw new ApiError(
@@ -29,11 +51,11 @@ const createCategory = asyncHandler(async (req, res) => {
     );
   }
 
-  const category = await Category.create({
+  const createCategory = await Category.create({
     name,
     owner: req.user._id,
   });
-  if (!category) {
+  if (!createCategory) {
     throw new ApiError(
       500,
       "Failed to create category due to an unexpected server error. Please try again later"
@@ -42,7 +64,13 @@ const createCategory = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(201, category, "Category created successfully"));
+    .json(
+      new ApiResponse(
+        201,
+        { category: createCategory },
+        "Category created successfully"
+      )
+    );
 });
 
 const getCategoryById = asyncHandler(async (req, res) => {
@@ -51,7 +79,7 @@ const getCategoryById = asyncHandler(async (req, res) => {
   // send response
 });
 
-const updateCategory = asyncHandler(async (req, res) => {
+const updateCategories = asyncHandler(async (req, res) => {
   // get input field
   // get category id
   // find category by id
@@ -59,10 +87,10 @@ const updateCategory = asyncHandler(async (req, res) => {
   // send response
 });
 
-const deleteCatgory = asyncHandler(async (req, res) => {
+const deleteCategory = asyncHandler(async (req, res) => {
   // get category id
   // find and delete category
   // send response
 });
 
-export { createCategory };
+export { createCategories, getAllCategories };
