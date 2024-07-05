@@ -83,11 +83,29 @@ const getCategoryById = asyncHandler(async (req, res) => {
 });
 
 const updateCategories = asyncHandler(async (req, res) => {
-  // get input field
-  // get category id
-  // find category by id
-  // set category
-  // send response
+  const { categoryId } = req.params;
+  const { name } = req.body;
+  if (!name.trim()) {
+    throw new ApiError(
+      400,
+      "Missing or incomplete information. Please fill out required field to update category"
+    );
+  }
+
+  const updateCategory = await Category.findByIdAndUpdate(
+    categoryId,
+    {
+      $set: { name },
+    },
+    { new: true }
+  );
+  if (!updateCategory) {
+    throw new ApiError(404, "Category does not exists");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updateCategory, "Category update successfully"));
 });
 
 const deleteCategory = asyncHandler(async (req, res) => {
@@ -96,4 +114,9 @@ const deleteCategory = asyncHandler(async (req, res) => {
   // send response
 });
 
-export { createCategories, getAllCategories, getCategoryById };
+export {
+  createCategories,
+  getAllCategories,
+  getCategoryById,
+  updateCategories,
+};
