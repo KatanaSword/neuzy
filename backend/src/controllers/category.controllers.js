@@ -5,10 +5,6 @@ import { Category } from "../models/category.models.js";
 import { getMongoosePaginationOptions } from "../utils/helpers.js";
 
 const getAllCategories = asyncHandler(async (req, res) => {
-  // get all category
-  // handle error
-  // use helper function
-  // send response
   const { page = 1, limit = 10 } = req.query;
   const categoryAggregate = await Category.aggregate([{ $match: {} }]);
 
@@ -74,9 +70,16 @@ const createCategories = asyncHandler(async (req, res) => {
 });
 
 const getCategoryById = asyncHandler(async (req, res) => {
-  // get category id
-  // find category exists or not
-  // send response
+  const { categoryId } = req.params;
+
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    throw new ApiError(404, "Category does not exists");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, category, "Category fetch successfully"));
 });
 
 const updateCategories = asyncHandler(async (req, res) => {
@@ -93,4 +96,4 @@ const deleteCategory = asyncHandler(async (req, res) => {
   // send response
 });
 
-export { createCategories, getAllCategories };
+export { createCategories, getAllCategories, getCategoryById };
