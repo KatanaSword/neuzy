@@ -56,4 +56,24 @@ const forgotPasswordMailgenContent = (username, resetPasswordURL) => {
   };
 };
 
-export { sendEmail, forgotPasswordMailgenContent };
+const verifyEmailMailgenContent = (username, verifyEmailURL) => {
+  return {
+    body: {
+      name: username,
+      intro:
+        "You have received this email because a verify email request for your account was received.",
+      action: {
+        instructions: "Click the button below to verify your email:",
+        button: {
+          color: "#52D5B6",
+          text: "Verify your email",
+          link: verifyEmailURL,
+        },
+      },
+      outro:
+        "Need help, or have questions? Just reply to this email, we'd love to help.",
+    },
+  };
+};
+
+export { sendEmail, forgotPasswordMailgenContent, verifyEmailMailgenContent };
