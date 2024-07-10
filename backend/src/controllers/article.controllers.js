@@ -5,6 +5,7 @@ import { Article } from "../models/article.models.js";
 import { Category } from "../models/category.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { getMongoosePaginationOptions } from "../utils/helpers.js";
+import { article } from "../constants.js";
 
 const getAllArticles = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
@@ -28,7 +29,7 @@ const getAllArticles = asyncHandler(async (req, res) => {
 });
 
 const createArticles = asyncHandler(async (req, res) => {
-  const { title, content, place, category } = req.body;
+  const { title, content, place, category, articleAccess } = req.body;
   if ([title, content, place, category].some((field) => field?.trim() === "")) {
     throw new ApiError(
       400,
@@ -37,7 +38,7 @@ const createArticles = asyncHandler(async (req, res) => {
   }
 
   const categoryExists = await Category.findOne({
-    category: category.name?.trim().toLowerCase(),
+    name: category?.trim().toLowerCase(),
   });
   if (!categoryExists) {
     throw new ApiError(404, "Category does not exists");
@@ -64,6 +65,7 @@ const createArticles = asyncHandler(async (req, res) => {
       url: image.url,
       publicId: image.public_id,
     },
+    articleAccess: articleAccess || article.FREE,
     category: categoryExists._id,
     author: req.user?._id,
   });
@@ -100,7 +102,45 @@ const getArticleById = asyncHandler(async (req, res) => {
 
 const getArticleByCategory = asyncHandler(async (req, res) => {});
 
-const updateArticles = asyncHandler(async (req, res) => {});
+const updateArticles = asyncHandler(async (req, res) => {
+  const { articleId } = req.params;
+  const { title, content, place, category } = req.body;
+
+  const article = await Article.findById(articleId);
+  if (!article) {
+    throw new ApiError(404, "Article does not exists");
+  }
+
+  const categoryExists = await Category.findOne({
+    name: category?.trim().toLowerCase(),
+  });
+  if (!categoryExists) {
+    throw new ApiError(404, "Category does not exists");
+  }
+
+  const updateArticles = await Article.findByIdAndUpdate(
+    article,
+    {
+      $set: {
+        title,
+        content,
+        place,
+        category: categoryExists?._id,
+      },
+    },
+    { new: true }
+  );
+  if (updateArticles) {
+    throw new ApiError(
+      500,
+      "Failed to update article due to an unexpected server error. Please try again later"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updateArticles, "Article update successfully"));
+});
 
 const deleteArticle = asyncHandler(async (req, res) => {});
 
