@@ -85,7 +85,18 @@ const createArticles = asyncHandler(async (req, res) => {
     );
 });
 
-const getArticleById = asyncHandler(async (req, res) => {});
+const getArticleById = asyncHandler(async (req, res) => {
+  const { articleId } = req.params;
+
+  const article = await Article.findOne({ _id: articleId });
+  if (!article) {
+    throw new ApiError(404, "Article does not exists");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, article, "Article fetch successfully"));
+});
 
 const getArticleByCategory = asyncHandler(async (req, res) => {});
 
