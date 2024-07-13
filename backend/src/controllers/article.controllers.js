@@ -3,7 +3,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Article } from "../models/article.models.js";
 import { Category } from "../models/category.models.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import { getMongoosePaginationOptions } from "../utils/helpers.js";
 import { article } from "../constants.js";
 
@@ -37,10 +40,10 @@ const createArticles = asyncHandler(async (req, res) => {
     );
   }
 
-  const categoryExists = await Category.findOne({
+  const categoryToBeAdded = await Category.findOne({
     name: category?.trim().toLowerCase(),
   });
-  if (!categoryExists) {
+  if (!categoryToBeAdded) {
     throw new ApiError(404, "Category does not exists");
   }
 
@@ -66,7 +69,7 @@ const createArticles = asyncHandler(async (req, res) => {
       publicId: image.public_id,
     },
     articleAccess: articleAccess || article.FREE,
-    category: categoryExists._id,
+    category: categoryToBeAdded._id,
     author: req.user?._id,
   });
   if (!createArticles) {
@@ -111,10 +114,10 @@ const updateArticles = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Article does not exists");
   }
 
-  const categoryExists = await Category.findOne({
+  const categoryToBeAdded = await Category.findOne({
     name: category?.trim().toLowerCase(),
   });
-  if (!categoryExists) {
+  if (!categoryToBeAdded) {
     throw new ApiError(404, "Category does not exists");
   }
 
@@ -125,12 +128,12 @@ const updateArticles = asyncHandler(async (req, res) => {
         title,
         content,
         place,
-        category: categoryExists?._id,
+        category: categoryToBeAdded?._id,
       },
     },
     { new: true }
   );
-  if (updateArticles) {
+  if (!updateArticles) {
     throw new ApiError(
       500,
       "Failed to update article due to an unexpected server error. Please try again later"
@@ -142,7 +145,53 @@ const updateArticles = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updateArticles, "Article update successfully"));
 });
 
-const deleteArticle = asyncHandler(async (req, res) => {});
+const updateImage = asyncHandler(async (req, res) => {
+  const { articleId } = req.params;
+
+  const article = await Article.findById(articleId);
+  if (!article) {
+    throw new ApiError(404, "Article does not exists");
+  }
+
+  const localFilePath = req.file?.path;
+  if (!localFilePath) {
+    throw new ApiError(400, "Image is missing");
+  }
+
+  const image = await uploadOnCloudinary(localFilePath, "Neuzy/articles");
+  if (!image) {
+    throw new ApiError(
+      400,
+      "Failed to upload image. Please ensure the file format is supported"
+    );
+  }
+
+  const updateImage = await Article.findByIdAndUpdate(
+    articleId,
+    {
+      $set: {
+        image: {
+          url: image.url,
+          publicId: image.public_id,
+        },
+      },
+    },
+    { new: true }
+  );
+  if (!updateImage) {
+    throw new ApiError(
+      500,
+      "Failed to update image due to an unexpected server error. Please try again later"
+    );
+  }
+
+  const publicId = article.image.publicId;
+  await deleteFromCloudinary(publicId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updateImage, "Image update successfully"));
+});
 
 export {
   getAllArticles,
@@ -150,5 +199,5 @@ export {
   getArticleById,
   getArticleByCategory,
   updateArticles,
-  deleteArticle,
+  updateImage,
 };
