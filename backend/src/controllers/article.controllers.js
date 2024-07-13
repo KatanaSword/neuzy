@@ -219,6 +219,37 @@ const deleteArticle = asyncHandler(async (req, res) => {
     );
 });
 
+const assignAccess = asyncHandler(async (req, res) => {
+  const { articleAccess } = req.body;
+  const { articleId } = req.params;
+
+  if (!articleAccess) {
+    throw new ApiError(
+      400,
+      "Missing or incomplete information. Please fill out required field to assign access"
+    );
+  }
+
+  try {
+    const article = await Article.findById(articleId);
+    if (!article) {
+      throw new ApiError(404, "Article does not exists");
+    }
+
+    article.articleAccess = articleAccess;
+    await article.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Article access change successfully"));
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Failed to assing access due to an unexpected server error. Please try again later"
+    );
+  }
+});
+
 export {
   getAllArticles,
   createArticles,
@@ -227,4 +258,5 @@ export {
   updateArticles,
   updateImage,
   deleteArticle,
+  assignAccess,
 };
