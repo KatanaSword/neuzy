@@ -193,6 +193,32 @@ const updateImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updateImage, "Image update successfully"));
 });
 
+const deleteArticle = asyncHandler(async (req, res) => {
+  const { articleId } = req.params;
+
+  const article = await Article.findById(articleId);
+  if (!article) {
+    throw new ApiError(404, "Article does not exists");
+  }
+
+  const deleteArticle = await Article.findByIdAndDelete(articleId);
+  if (!deleteArticle) {
+    throw new ApiError(
+      500,
+      "Failed to delete article due to an unexpected server error. Please try again later"
+    );
+  }
+
+  const publicId = article.image.publicId;
+  await deleteFromCloudinary(publicId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { deleteArticle }, "Article delete successfully")
+    );
+});
+
 export {
   getAllArticles,
   createArticles,
@@ -200,4 +226,5 @@ export {
   getArticleByCategory,
   updateArticles,
   updateImage,
+  deleteArticle,
 };
