@@ -9,6 +9,7 @@ import {
 } from "../utils/cloudinary.js";
 import { getMongoosePaginationOptions } from "../utils/helpers.js";
 import { article } from "../constants.js";
+import mongoose from "mongoose";
 
 const getAllArticles = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
@@ -103,7 +104,44 @@ const getArticleById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, article, "Article fetch successfully"));
 });
 
-const getArticleByCategory = asyncHandler(async (req, res) => {});
+const getArticleByCategory = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const { categoryId } = req.params;
+
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    throw new ApiError(404, "Category does not exists");
+  }
+
+  const articleAggregate = await Article.aggregate([
+    { $match: { category: new mongoose.Types.ObjectId(categoryId) } },
+  ]);
+  if (articleAggregate.length < 1) {
+    throw new ApiError(404, "Article does not exists");
+  }
+
+  const articles = await Article.aggregatePaginate(
+    articleAggregate,
+    getMongoosePaginationOptions({
+      page,
+      limit,
+      customLabels: {
+        totalDocs: "totalArticles",
+        docs: "articles",
+      },
+    })
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { ...articles, category },
+        "Category articles fetched successfully"
+      )
+    );
+});
 
 const updateArticles = asyncHandler(async (req, res) => {
   const { articleId } = req.params;
