@@ -20,10 +20,12 @@ app.use(cookieParser());
 import userRouter from "./routers/user.routers.js";
 import categoryRouter from "./routers/category.routers.js";
 import articleRouter from "./routers/article.routers.js";
+import likeRouter from "./routers/like.routers.js";
 
 // Declear router
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/articles", articleRouter);
+app.use("/api/v1/likes", likeRouter);
 
 export { app };
