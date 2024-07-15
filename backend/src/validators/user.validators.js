@@ -80,9 +80,27 @@ const userForgotPasswordValidators = () => {
   ];
 };
 
+const userResetPasswordValidators = () => {
+  return [
+    body("resetPassword")
+      .notEmpty()
+      .withMessage("Reset password is required")
+      .isStrongPassword({
+        minLength: 8,
+        minNumbers: 1,
+        minSymbols: 1,
+      })
+      .withMessage(
+        "password must be at least 8 characters long, with at least one number and one special symbol"
+      ),
+  ];
+};
+
 export {
   userRegisterValidators,
   UserLogInValidators,
   userChangeCurrentPasswordValidators,
   userAccountDetailUpdateValidators,
+  userForgotPasswordValidators,
+  userResetPasswordValidators,
 };
