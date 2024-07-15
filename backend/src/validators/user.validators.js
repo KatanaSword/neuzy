@@ -60,8 +60,18 @@ const userChangeCurrentPasswordValidators = () => {
   ];
 };
 
+const userAccountDetailUpdateValidators = () => {
+  return [
+    body("firstName").optional(),
+    body("lastName").optional(),
+    body("username").optional(),
+    body("email").optional().isEmail().withMessage("Email is invalid"),
+  ];
+};
+
 export {
   userRegisterValidators,
   UserLogInValidators,
   userChangeCurrentPasswordValidators,
+  userAccountDetailUpdateValidators,
 };
