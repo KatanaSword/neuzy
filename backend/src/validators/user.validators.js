@@ -20,7 +20,6 @@ const userRegisterValidators = () => {
       .isIn(availableUserRole)
       .withMessage("Invalid user role"),
     body("password")
-      .trim()
       .notEmpty()
       .withMessage("Password is required")
       .isStrongPassword({
@@ -42,4 +41,27 @@ const UserLogInValidators = () => {
   ];
 };
 
-export { userRegisterValidators, UserLogInValidators };
+const userChangeCurrentPasswordValidators = () => {
+  return [
+    body("currentPassword")
+      .notEmpty()
+      .withMessage("Current password is required"),
+    body("newPassword")
+      .notEmpty()
+      .withMessage("New password is required")
+      .isStrongPassword({
+        minLength: 8,
+        minNumbers: 1,
+        minSymbols: 1,
+      })
+      .withMessage(
+        "password must be at least 8 characters long, with at least one number and one special symbol"
+      ),
+  ];
+};
+
+export {
+  userRegisterValidators,
+  UserLogInValidators,
+  userChangeCurrentPasswordValidators,
+};
