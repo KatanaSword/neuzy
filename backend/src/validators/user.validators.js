@@ -96,7 +96,7 @@ const userResetPasswordValidators = () => {
   ];
 };
 
-const userVerifyEmailId = () => {
+const userVerifyEmailIdValidators = () => {
   return [
     body("email")
       .trim()
@@ -107,6 +107,15 @@ const userVerifyEmailId = () => {
   ];
 };
 
+const userAssignRoleValidators = () => {
+  return [
+    body("role")
+      .optional()
+      .isIn(availableUserRole)
+      .withMessage("Invalid user role"),
+  ];
+};
+
 export {
   userRegisterValidators,
   UserLogInValidators,
@@ -114,5 +123,6 @@ export {
   userAccountDetailUpdateValidators,
   userForgotPasswordValidators,
   userResetPasswordValidators,
-  userVerifyEmailId,
+  userVerifyEmailIdValidators,
+  userAssignRoleValidators,
 };
