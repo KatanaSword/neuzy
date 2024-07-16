@@ -23,4 +23,16 @@ const articleUpdateRequestBodyValidator = () => {
   ];
 };
 
-export { articleCreateRequestBodyValidator, articleUpdateRequestBodyValidator };
+const assignAccessRequestBodyValidator = () => {
+  return [
+    body("articleAccess")
+      .isIn(availableArticle)
+      .withMessage("Invalid article access"),
+  ];
+};
+
+export {
+  articleCreateRequestBodyValidator,
+  articleUpdateRequestBodyValidator,
+  assignAccessRequestBodyValidator,
+};
