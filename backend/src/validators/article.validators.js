@@ -14,4 +14,13 @@ const articleCreateRequestBodyValidator = () => {
   ];
 };
 
-export { articleCreateRequestBodyValidator };
+const articleUpdateRequestBodyValidator = () => {
+  return [
+    body("title").optional(),
+    body("content").optional(),
+    body("place").optional(),
+    body("category").optional(),
+  ];
+};
+
+export { articleCreateRequestBodyValidator, articleUpdateRequestBodyValidator };
