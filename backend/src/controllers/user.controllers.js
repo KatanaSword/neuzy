@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.models.js";
-import { userRole, userSubscription } from "../constants.js";
+import { userRole } from "../constants.js";
 import { options } from "../constants.js";
 import jwt from "jsonwebtoken";
 import {
@@ -35,12 +35,8 @@ const generateRefreshAndAccessToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, role, subscription, password } = req.body;
-  if (
-    [username, email, role, subscription, password].some(
-      (field) => field?.trim() === ""
-    )
-  ) {
+  const { username, email, role, password } = req.body;
+  if ([username, email, password].some((field) => field?.trim() === "")) {
     throw new ApiError(
       400,
       "Missing or incomplete information. Please fill out all required fields to sign up"
@@ -64,7 +60,6 @@ const registerUser = asyncHandler(async (req, res) => {
     username: username.toLowerCase(),
     email,
     role: role || userRole.USER,
-    subscription: subscription || userSubscription.FREE,
     password,
   });
   if (!user) {
@@ -94,7 +89,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const logInUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
-  if (!email.trim() && !username.trim()) {
+  if (!email?.trim() && !username?.trim()) {
     throw new ApiError(
       400,
       "Missing or incomplete information. Please fill out all required fields to log in."
@@ -103,8 +98,8 @@ const logInUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({
     $or: [
-      { email: email.trim().toLowerCase() },
-      { username: username.trim().toLowerCase() },
+      { email: email?.trim().toLowerCase() },
+      { username: username?.trim().toLowerCase() },
     ],
   });
   if (!user) {
