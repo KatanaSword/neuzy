@@ -2,24 +2,23 @@ export const DB_NAME = "Neuzy";
 
 export const options = {
   httpOnly: true,
-  secret: true,
+  secure: true,
 };
 
 export const userRole = {
   USER: "USER",
   SUBSCRIBER: "SUBSCRIBER",
-  AUTHOR: "AUTHOR",
   ADMIN: "ADMIN",
 };
 
 export const availableUserRole = Object.values(userRole);
 
-export const userSubscription = {
+export const article = {
   FREE: "FREE",
   PREMIUM: "PREMIUM",
 };
 
-export const availableUserSubscription = Object.values(userSubscription);
+export const availableArticle = Object.values(article);
 
 export const paymentMethod = {
   UNKNOWN: "UNKNOWN",

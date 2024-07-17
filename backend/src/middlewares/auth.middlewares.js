@@ -33,7 +33,7 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
 });
 
 const verifyPermission = (role = []) => {
-  asyncHandler(async (req, res, next) => {
+  asyncHandler(async (req, _, next) => {
     if (!req.user?._id) {
       throw new ApiError(401, "Unauthorized request");
     }
