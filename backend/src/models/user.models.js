@@ -4,11 +4,9 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import {
   USER_TEMPORARY_TOKEN_EXPIRY,
-  availableSubscription,
   availableUserRole,
   userRole,
-  userSubscription,
-} from "../constants";
+} from "../constants.js";
 
 const userSchema = new Schema(
   {
@@ -40,11 +38,11 @@ const userSchema = new Schema(
       type: String,
       enum: availableUserRole,
       default: userRole.USER,
+      required: true,
     },
-    subscription: {
-      type: String,
-      enum: availableSubscription,
-      default: userSubscription.FREE,
+    isSubscribe: {
+      type: Boolean,
+      default: false,
     },
     avatar: {
       type: {
@@ -62,6 +60,16 @@ const userSchema = new Schema(
     },
     refreshToken: {
       type: String,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpiry: {
+      type: Date,
     },
     forgotPasswordToken: {
       type: String,
