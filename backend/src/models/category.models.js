@@ -1,10 +1,11 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
-const schemaCategory = new Schema(
+const categorySchema = new Schema(
   {
     name: {
       type: String,
+      lowercase: true,
       trim: true,
       unique: true,
       required: true,
@@ -17,6 +18,6 @@ const schemaCategory = new Schema(
   { timestamps: true }
 );
 
-schemaCategory.plugin(mongooseAggregatePaginate);
+categorySchema.plugin(mongooseAggregatePaginate);
 
-export const Category = mongoose.model("Category", schemaCategory);
+export const Category = mongoose.model("Category", categorySchema);

@@ -1,7 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import { article, availableArticle } from "../constants.js";
 
-const schemaArticle = new Schema(
+const articleSchema = new Schema(
   {
     title: {
       type: String,
@@ -13,21 +14,19 @@ const schemaArticle = new Schema(
       trim: true,
       required: true,
     },
-    images: {
-      type: [
-        {
-          url: String,
-          publicId: String,
-        },
-      ],
-      default: [],
+    image: {
+      type: {
+        url: String,
+        publicId: String,
+      },
+      default: {
+        url: "",
+        publicId: "",
+      },
       required: true,
     },
     place: {
       type: String,
-    },
-    tags: {
-      type: [],
     },
     publishDate: {
       type: Date,
@@ -37,13 +36,15 @@ const schemaArticle = new Schema(
       type: Boolean,
       default: false,
     },
-    isPremium: {
-      type: Boolean,
-      default: false,
+    articleAccess: {
+      type: String,
+      enum: availableArticle,
+      default: article.FREE,
+      required: true,
     },
     author: {
       type: Schema.Types.ObjectId,
-      ref: "Author",
+      ref: "User",
       required: true,
     },
     category: {
@@ -54,6 +55,6 @@ const schemaArticle = new Schema(
   },
   { timestamps: true }
 );
-schemaArticle.plugin(mongooseAggregatePaginate);
+articleSchema.plugin(mongooseAggregatePaginate);
 
-export const Article = mongoose.model("Article", schemaArticle);
+export const Article = mongoose.model("Article", articleSchema);
