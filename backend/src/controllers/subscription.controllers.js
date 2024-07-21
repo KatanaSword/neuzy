@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { nanoid } from "nanoid";
 import { Subscription } from "../models/subscription.models.js";
 import { paymentMethod, userSubscription } from "../constants.js";
+import { sendEmail } from "../utils/mail.js";
 
 let razorpayInstance;
 try {
@@ -15,6 +16,22 @@ try {
 } catch (error) {
   console.log("RAZORPAY ERROR:", error);
 }
+
+const orderFulfillmentHelper = async (orderPaymentId) => {
+  const subscription = await Subscription.findOneAndUpdate(
+    {
+      paymentId: orderPaymentId,
+    },
+    {
+      $set: {
+        isPaymentDone: true,
+      },
+    },
+    { new: true }
+  );
+
+  return subscription;
+};
 
 const generateRazorpayOrder = asyncHandler(async (req, res) => {
   if (!razorpayInstance) {
@@ -45,6 +62,7 @@ const generateRazorpayOrder = asyncHandler(async (req, res) => {
       }
       const unpaidOrder = await Subscription.create({
         subscriber: req.user?._id,
+        subscriptionPrice: orderOptions.amount ?? 0,
         plan: userSubscription.PREMIUM,
         paymentProvider: paymentMethod.RAZORPAY,
         paymentId: razorpayOrder.id,
