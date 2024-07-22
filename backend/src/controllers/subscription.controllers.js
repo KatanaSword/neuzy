@@ -4,8 +4,11 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { nanoid } from "nanoid";
 import { Subscription } from "../models/subscription.models.js";
-import { paymentMethod, userSubscription } from "../constants.js";
+import { paymentMethod, userRole, userSubscription } from "../constants.js";
 import crypto from "crypto";
+import { User } from "../models/user.models.js";
+import mongoose from "mongoose";
+import { getMongoosePaginationOptions } from "../utils/helpers.js";
 
 let razorpayInstance;
 try {
@@ -17,7 +20,7 @@ try {
   console.log("RAZORPAY ERROR:", error);
 }
 
-const orderFulfillmentHelper = async (orderPaymentId) => {
+const orderFulfillmentHelper = async (orderPaymentId, req) => {
   const subscription = await Subscription.findOneAndUpdate(
     {
       paymentId: orderPaymentId,
@@ -29,6 +32,22 @@ const orderFulfillmentHelper = async (orderPaymentId) => {
     },
     { new: true }
   );
+  if (!subscription) {
+    throw new ApiError(404, "Subscription does not exists");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        role: userRole.SUBSCRIBER,
+      },
+    },
+    { new: true }
+  );
+  if (!user) {
+    throw new ApiError(404, "User does not exists");
+  }
 
   return subscription;
 };
@@ -99,7 +118,7 @@ const verifyRazorpayPayment = asyncHandler(async (req, res) => {
     .digest("hex");
 
   if (expectedSignature === razorpay_signature) {
-    const subscription = await orderFulfillmentHelper(razorpay_payment_id);
+    const subscription = await orderFulfillmentHelper(razorpay_payment_id, req);
     return res
       .status(200)
       .json(new ApiResponse(201, subscription, "Order place successfully"));
@@ -108,8 +127,41 @@ const verifyRazorpayPayment = asyncHandler(async (req, res) => {
   }
 });
 
-const getSubscriptionById = asyncHandler(async (req, res) => {});
+const getSubscriptionById = asyncHandler(async (req, res) => {
+  const { subscriptionId } = req.params;
+  const subscription = await Subscription.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(subscriptionId) } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "subscriber",
+        foreignField: "_id",
+        as: "subscriber",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  if (subscription.length < 1) {
+    throw new ApiError(404, "Subscription does not exists");
+  }
 
-const getSubscriberListAdmin = asyncHandler(async (req, res) => {});
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, subscription, "Subscription fetch successfully")
+    );
+});
 
-export { generateRazorpayOrder };
+export {
+  generateRazorpayOrder,
+  verifyRazorpayPayment,
+  getSubscriptionById,
+  getSubscriberListAdmin,
+};
